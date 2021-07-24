@@ -102,7 +102,7 @@ function bb_squelch {
     grep -v 'Fetching origin'
 }
 
-function bb_backup {
+function bb_server {
     eval "declare -A BB="${1#*=}
     if [ "${BB[VERBOSITY]}" == "silent" ] ; then
 	BB_OUTPUT_FILTER=bb_squelch
