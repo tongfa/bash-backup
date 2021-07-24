@@ -16,12 +16,11 @@ backup a database, you will need item 3.
 
 ## Usage
 
-The way the script works is that you create a bash script that acts as
-a configuration file and sources the bb_backup.inc script.
-Configuration parameters are communicated to bb_backup.inc as a single
-associate array in BASH.  If you have more than one backup to do, you
-can create a simple script to execute all the backup configurations in
-order.
+Create a bash script that acts as a configuration file and sources the
+bb_backup.inc script.  Configuration parameters are communicated to
+bb_backup.inc as a single associative array in BASH.  If you have more
+than one backup to do, create a higher level script to execute all
+the backup configurations in order.
 
 Note: Bash barely supports associative arrays, so its a little hacky
 especially since we intend to support Bash 4.2.
@@ -34,9 +33,10 @@ server, this isn't the right approach for you to implement backups.
 The next requirement is that the SSH account on the side you intend to
 backup either has access to the resources it intends to backup, with
 the following exception: You can `sudo` without a password on the
-remote side to an account that has access instead.
+remote side to an account that has access instead, that is if the
+remote account supports `sudo`ing without a password.
 
-The associate array configuration variables bash backup reads are as follows:
+The associative array configuration variables bash backup reads are as follows:
 
 ### required
 
@@ -59,7 +59,7 @@ DESTINATION_FOLDER - required - local folder where you want the backup written.
 REMOTE_FILES - optional - folder that you would like rsycned into the backup.
 
 REMOTE_FILES_USER - optional - if the user specified in the
-1REMOTE_SERVER` does not have read access to all files that need to
+`REMOTE_SERVER` does not have read access to all files that need to
 be backed up, specify a user that does here.
 
 ### for backing up git repo
