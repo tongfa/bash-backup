@@ -3,22 +3,66 @@ A headless backup system for websites with databases runnable from cron
 
 ## Description
 
-This is a simple backup system written in bash with the following dependencies:
-1. ssh
-2. rsync on both sides (optional)
-3. mysqldump on the remote side (optional)
-4. git on both sides (optional)
+This is a simple backup system written in bash.  It depends on rsync.  You
+can think of this program as a program to calculate the options you want
+to pass to rsync so that you don't have to figure them out.
 
-Optional dependencies are optional in the sense that you can choose
-not to back up the items the dependency is responsible for.  If you
-want to backup a filesystem, you will need item 2.  If you want to
-backup a database, you will need item 3.
+There are two scripts.  bb_server.inc is for making a backup of a
+remote server, including possible mysql database and git repos.
+bb_desktop.inc is for making a backup of a desktop machine to another
+computer.
+
+Backups of files are performed using rsync, and will utilize the
+--link-dest argument in order to create incremental backups.  This
+will cause a new backup folder to contain hardlinks to files that did
+not change since the previous backup.
+
+For server backups special provisions are made for backing up mysql
+databases and git repos.  (I use git to automate deploys to servers
+typically so I want a backup of that, but each to their own.)
+
+## Desktop backups
+
+A script to backup a desktop might look like:
+
+```
+#!/bin/bash
+
+. ./bb_desktop.inc
+
+declare -A CONFIG
+#uncomment for extreme verbosity
+#set -x
+
+CONFIG[SERVER]=1.2.3.4
+CONFIG[STAMP]=$(date +%FT%T)
+CONFIG[DESTINATION_FOLDER]=/vault/backups/machines/$(hostname)
+
+bb_desktop "$(declare -p CONFIG)"
+```
+
+`CONFIG[SERVER]=1.2.3.4` can be used to backup over a network to a
+remote machine via ssh.  This is optional however, and a backup to a
+locally mounted disk is possible by simply not specifying SERVER in
+the CONFIG.
+
+STAMP is required and must be unique per backup.
+
+DESTINATION_FOLDER is also required, and should be the same for all backups
+in order for the rsync incremental backup feature to work.
+
+## Server backups
+
+Backups can be performed of remote systems, this will depend on `ssh`.
+
+Also special provisions are made to backup mysql databases using mysqldump,
+and also git repos if you want to back them up as well.
 
 ## Usage
 
 The way the script works is that you create a bash script that acts as
-a configuration file and sources the bb_backup.inc script.
-Configuration parameters are communicated to bb_backup.inc as a single
+a configuration file and sources the bb_server.inc script.
+Configuration parameters are communicated to bb_server.inc as a single
 associate array in BASH.  If you have more than one backup to do, you
 can create a simple script to execute all the backup configurations in
 order.
@@ -96,7 +140,7 @@ A typical configuration file might look like:
 ```
 #!/bin/bash
 
-. ./bb_backup.inc
+. ./bb_server.inc
 
 declare -A CONFIG
 #uncomment for extreme verbosity
@@ -114,5 +158,5 @@ CONFIG[REMOTE_DB_USER]=mydbuser
 CONFIG[REMOTE_DB_NAME]=mydbname
 CONFIG[REMOTE_DB_PASSWORD]="\$(sudo -u <user> -s cat /var//www/site.com/_root_/wp-config.php | awk '/define.*DB_PASSWORD/ { print \"<?php \"; print $1; print \" echo DB_PASSWORD ?>\"  } ' | php)"
 
-bb_backup "$(declare -p CONFIG)"
+bb_server "$(declare -p CONFIG)"
 ```
